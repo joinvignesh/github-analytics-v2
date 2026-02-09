@@ -1,0 +1,25 @@
+# ============================================
+# Core Dependencies
+# ============================================
+requests==2.31.0                    # HTTP requests to GitHub API
+google-cloud-storage==2.14.0        # Write to GCS
+google-cloud-secret-manager==2.18.0 # Read secrets
+python-dotenv==1.0.0                # Load .env files for local dev
+
+# ============================================
+# Data Processing
+# ============================================
+pandas==2.1.4                       # Data manipulation (optional, for analysis)
+
+# ============================================
+# Development & Testing
+# ============================================
+pytest==7.4.3                       # Unit testing framework
+pytest-cov==4.1.0                   # Test coverage reports
+black==23.12.1                      # Code formatting
+flake8==7.0.0                       # Linting
+
+# ============================================
+# Utilities
+# ============================================
+python-dateutil==2.8.2              # Date parsing

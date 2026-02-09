@@ -1,0 +1,23 @@
+{
+  "repositories": [
+    {
+      "owner": "apache",
+      "repo": "airflow",
+      "description": "Workflow orchestration platform",
+      "enabled": true
+    },
+    {
+      "owner": "dbt-labs",
+      "repo": "dbt-core",
+      "description": "Data transformation tool",
+      "enabled": true
+    }
+  ],
+  "extraction_config": {
+    "lookback_days": 7,
+    "include_closed_issues": true,
+    "include_pull_requests": true,
+    "include_comments": true,
+    "max_issues_per_repo": 500
+  }
+}
