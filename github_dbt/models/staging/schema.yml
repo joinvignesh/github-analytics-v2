@@ -1,0 +1,45 @@
+version: 2
+
+models:
+  - name: stg_github_issues
+    description: Staged GitHub issues with typed columns
+    columns:
+      - name: issue_id
+        description: Unique identifier for the issue
+        tests:
+          - unique
+          - not_null
+      
+      - name: state
+        description: Current state of the issue
+        tests:
+          - accepted_values:
+                values: ['open', 'closed']
+      
+      - name: created_at
+        description: When the issue was created
+        tests:
+          - not_null
+  
+  - name: stg_github_repositories
+    description: Staged GitHub repositories with typed columns
+    columns:
+      - name: repository_id
+        description: Unique identifier for the repository
+        tests:
+          - unique
+          - not_null
+      
+      - name: repository_name
+        description: Name of the repository
+        tests:
+          - not_null
+  
+  - name: stg_github_comments
+    description: Staged GitHub comments with typed columns
+    columns:
+      - name: comment_id
+        description: Unique identifier for the comment
+        tests:
+          - unique
+          - not_null

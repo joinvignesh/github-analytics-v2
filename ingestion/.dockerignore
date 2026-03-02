@@ -1,0 +1,55 @@
+# ============================================
+# .dockerignore
+# ============================================
+# Files/folders to exclude when building Docker image
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Environment files (secrets should come from Cloud Run env vars)
+.env
+.env.*
+*.pem
+*.key
+service-account-key.json
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# Documentation (not needed in runtime container)
+*.md
+docs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+dist/
+build/
+*.egg-info/

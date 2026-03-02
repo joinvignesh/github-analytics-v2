@@ -1,0 +1,21 @@
+# ============================================================================
+# dbt profiles.yml for Cloud Run
+# Credentials are injected via environment variables at runtime
+# ============================================================================
+
+github_dbt:
+  outputs:
+    prod:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role: ACCOUNTADMIN
+      database: GITHUB_ANALYTICS
+      warehouse: GITHUB_TRANSFORM_WH
+      schema: RAW
+      threads: 4
+      client_session_keep_alive: False
+      query_tag: dbt_cloud_run_automated
+      
+  target: prod

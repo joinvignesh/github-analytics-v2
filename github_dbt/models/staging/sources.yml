@@ -1,0 +1,61 @@
+version: 2
+
+sources:
+  - name: github_raw
+    description: Raw GitHub data loaded via Snowpipe
+    database: GITHUB_ANALYTICS
+    schema: RAW
+    tables:
+      
+      - name: github_issues
+        description: Raw GitHub issues and pull requests
+        config:
+          freshness:
+            warn_after: {count: 24, period: hour}
+            error_after: {count: 48, period: hour}
+        loaded_at_field: loaded_at
+        columns:
+          - name: raw_data
+            description: Complete JSON object from GitHub API
+            data_type: variant
+          - name: loaded_at
+            description: Timestamp when Snowpipe loaded the record
+            data_type: timestamp_ltz
+          - name: source_file
+            description: GCS file path that contained this record
+            data_type: varchar
+        tests:
+          - dbt_utils.recency:
+              datepart: hour
+              field: loaded_at
+              interval: 48
+      
+      - name: github_repositories
+        description: Raw GitHub repository metadata
+        config:
+          freshness:
+            warn_after: {count: 24, period: hour}
+            error_after: {count: 48, period: hour}
+        loaded_at_field: loaded_at
+        columns:
+          - name: raw_data
+            data_type: variant
+          - name: loaded_at
+            data_type: timestamp_ltz
+          - name: source_file
+            data_type: varchar
+      
+      - name: github_comments
+        description: Raw GitHub issue comments
+        config:
+          freshness:
+            warn_after: {count: 24, period: hour}
+            error_after: {count: 48, period: hour}
+        loaded_at_field: loaded_at
+        columns:
+          - name: raw_data
+            data_type: variant
+          - name: loaded_at
+            data_type: timestamp_ltz
+          - name: source_file
+            data_type: varchar

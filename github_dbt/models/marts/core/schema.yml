@@ -1,0 +1,42 @@
+version: 2
+
+models:
+  - name: fct_repo_activity_daily
+    description: |
+      Daily aggregated activity metrics for each repository.
+      Includes issue creation, closure, and comment activity.
+      Incremental model that processes only new dates.
+    
+    columns:
+      - name: activity_date
+        description: Date of activity (truncated to day)
+      
+      - name: repository_id
+        description: Foreign key to dim_repository
+      
+      - name: total_issues_created
+        description: Total issues and PRs created on this date
+      
+      - name: issues_closed
+        description: Issues closed on this date
+      
+      - name: unique_contributors
+        description: Count of distinct users who created issues
+  
+  - name: dim_repository
+    description: |
+      Dimension table containing repository attributes.
+      One row per repository with current snapshot of metadata.
+    
+    columns:
+      - name: repository_id
+        description: Primary key
+        tests:
+          - unique
+          - not_null
+      
+      - name: full_name
+        description: Full repository name (owner/repo)
+      
+      - name: popularity_tier
+        description: Categorization based on star count
