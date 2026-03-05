@@ -1,7 +1,7 @@
 {{
     config(
         materialized='view',
-        tags=['staging', 'github']
+        tags=['staging', 'github', 'comments']
     )
 }}
 
@@ -23,6 +23,9 @@ parsed AS (
         raw_data:user.login::STRING AS author_username,
         raw_data:user.id::NUMBER AS author_id,
         raw_data:user.type::STRING AS author_type,
+
+        -- Associated issue & repository
+        raw_data:issue_url::STRING AS issue_url,
         
         -- Associated issue
         -- Extract issue number from URL like .../issues/1234
@@ -31,7 +34,14 @@ parsed AS (
             '/issues/([0-9]+)', 
             1, 1, 'e', 1
         )::NUMBER AS issue_number,
-        raw_data:issue_url::STRING AS issue_api_url,
+
+        -- Extract repository from issue_url
+        -- URL format: https://api.github.com/repos/{owner}/{repo}/issues/{issue_num}
+        REGEXP_SUBSTR(
+            raw_data:issue_url::STRING,
+            'repos/([^/]+/[^/]+)/',
+            1, 1, 'e', 1
+        )::STRING AS repository_full_name,
         
         -- Timestamps
         raw_data:created_at::TIMESTAMP_NTZ AS created_at,
@@ -55,6 +65,7 @@ parsed AS (
         -- Metadata
         raw_data:source_repository::STRING AS repository,
         raw_data:extraction_date::DATE AS extraction_date,
+        raw_data:author_association::STRING AS author_association,
         source_file,
         loaded_at
         

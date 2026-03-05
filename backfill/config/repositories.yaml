@@ -1,0 +1,55 @@
+# ============================================================================
+# Repository Configuration for Historical Backfill
+# ============================================================================
+
+repositories:
+  - owner: "apache"
+    name: "airflow"
+    full_name: "apache/airflow"
+    
+    # Optional: Override global settings for this repo
+    config_overrides:
+      # If repo is very large, use custom settings
+      per_page: 100
+      batch_size: 1
+      
+    # Optional: Custom date range for this repo
+    custom_date_range:
+      # start_date: "2015-04-01"  # Uncomment to override
+      # end_date: "2026-02-27"    # Uncomment to override
+      
+    # Metadata (optional, for reference)
+    metadata:
+      description: "Apache Airflow - workflow management platform"
+      created_at: "2015-04-13"
+      primary_language: "Python"
+      estimated_issues: 5000
+      estimated_comments: 15000
+      
+  - owner: "dbt-labs"
+    name: "dbt-core"
+    full_name: "dbt-labs/dbt-core"
+    
+    metadata:
+      description: "dbt (data build tool) - data transformation workflow"
+      created_at: "2016-02-01"
+      primary_language: "Python"
+      estimated_issues: 3000
+      estimated_comments: 10000
+
+# Additional repositories (commented out - add as needed)
+# - owner: "kubernetes"
+#   name: "kubernetes"
+#   full_name: "kubernetes/kubernetes"
+#   
+#   # Very large repo - use aggressive chunking
+#   config_overrides:
+#     strategy: "monthly_chunks"
+#     per_page: 100
+#     inter_batch_delay: 10
+#   
+#   metadata:
+#     description: "Production-Grade Container Orchestration"
+#     created_at: "2014-06-06"
+#     estimated_issues: 50000
+#     estimated_comments: 200000

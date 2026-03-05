@@ -39,7 +39,12 @@ parsed AS (
         raw_data:url::STRING AS api_url,
         raw_data:body::STRING AS body,
         LENGTH(raw_data:body::STRING) AS body_length,
-        raw_data:source_repository::STRING AS repository,
+        
+        COALESCE(
+            raw_data:source_repository::STRING, 
+            REGEXP_SUBSTR(raw_data:repository_url::STRING, 'repos/([^/]+/[^/]+)', 1, 1, 'e', 1)
+        ) AS repository,
+        
         raw_data:extraction_date::DATE AS extraction_date,
         source_file,
         loaded_at

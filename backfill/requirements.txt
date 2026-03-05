@@ -1,0 +1,27 @@
+# Core dependencies
+requests==2.31.0
+google-cloud-storage==2.14.0
+google-cloud-secret-manager==2.18.0
+pyyaml==6.0.1
+
+# Utilities
+python-dateutil==2.8.2
+pytz==2023.3
+
+# Logging & monitoring
+structlog==23.1.0
+
+# Retries & rate limiting
+urllib3==2.0.4
+tenacity==8.2.3
+
+# Testing
+pytest==7.4.0
+pytest-cov==4.1.0
+pytest-mock==3.11.1
+responses==0.23.3
+
+# Code quality
+black==23.7.0
+flake8==6.1.0
+mypy==1.5.0

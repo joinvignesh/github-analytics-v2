@@ -40,3 +40,81 @@ models:
       
       - name: popularity_tier
         description: Categorization based on star count
+
+  - name: fct_issue_lifecycle
+    description: "Issue-grain fact table for lifecycle tracking and Gantt visualization"
+    columns:
+      - name: issue_key
+        description: "Surrogate key (primary key)"
+        tests:
+          - unique
+          - not_null
+      
+      - name: issue_id
+        description: "GitHub issue ID"
+        tests:
+          - not_null
+      
+      - name: created_date
+        description: "Date issue was created (for date filtering)"
+        tests:
+          - not_null
+      
+      - name: status_label
+        description: "Human-readable status"
+        tests:
+          - accepted_values:
+              arguments:  # ← ADD THIS
+                values: ['Open', 'Closed', 'Unknown']
+      
+      - name: duration_days
+        description: "Days from creation to closure (or to now if open)"
+        tests:
+          - not_null
+  
+  - name: fct_issue_comments
+    description: "Comment-grain fact table for timeline visualization"
+    columns:
+      - name: comment_key
+        description: "Surrogate key (primary key)"
+        tests:
+          - unique
+          - not_null
+      
+      - name: comment_id
+        description: "GitHub comment ID"
+        tests:
+          - not_null
+      
+      - name: issue_id
+        description: "Foreign key to fct_issue_lifecycle"
+        tests:
+          - not_null
+          - relationships:
+              arguments:  # ← ADD THIS
+                to: ref('fct_issue_lifecycle')
+                field: issue_id
+      
+      - name: comment_date_key
+        description: "Date comment was created (for date filtering)"
+        tests:
+          - not_null
+  
+  - name: dim_date
+    description: "Date dimension for cross-grain filtering"
+    columns:
+      - name: date_key
+        description: "Date (primary key)"
+        tests:
+          - unique
+          - not_null
+
+
+
+
+
+
+
+
+
+

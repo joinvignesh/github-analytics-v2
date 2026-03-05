@@ -1,0 +1,151 @@
+# ============================================================================
+# GitHub Historical Backfill Configuration
+# ============================================================================
+
+# GCP Configuration
+gcp:
+  project_id: "github-analytics-486213-u7"
+  bucket_name: "github-raw-data-github-analytics-486213-u7"
+  region: "us-central1"
+  
+# GitHub API Configuration
+github:
+  api_base_url: "https://api.github.com"
+  secret_name: "github-pat"  # Secret Manager secret name
+  max_retries: 5
+  retry_delay_base: 2  # seconds (exponential backoff)
+  timeout: 30  # seconds per request
+  
+# Backfill Strategy
+backfill:
+  # Time range strategy
+  strategy: "monthly_chunks"  # Options: monthly_chunks, yearly_chunks, full
+  
+  # Start date (YYYY-MM-DD) - if null, uses repo creation date
+  start_date: null
+  
+  # End date (YYYY-MM-DD) - if null, uses today
+  end_date: null
+  
+  # Chunk size for pagination
+  per_page: 100  # Max: 100 for GitHub API
+  
+  # Batch processing
+  batch_size: 3  # Process N repos in parallel (recommend 1-3)
+  
+  # Sleep between batches to respect rate limits
+  inter_batch_delay: 5  # seconds
+  
+# Rate Limiting
+rate_limit:
+  # GitHub allows 5000 requests/hour for authenticated users
+  # We'll be conservative
+  max_requests_per_hour: 4500
+  
+  # Check rate limit every N requests
+  check_interval: 50
+  
+  # When to trigger proactive backoff
+  warning_threshold: 500  # remaining requests
+  
+  # Emergency stop threshold
+  critical_threshold: 100
+  
+# Checkpointing & Resume
+checkpoint:
+  enabled: true
+  storage: "local"  # Options: local, gcs, both
+  local_path: "./checkpoints"
+  gcs_path: "backfill/checkpoints"
+  
+  # Save checkpoint every N records processed
+  save_interval: 500
+  
+# Data Validation
+validation:
+  enabled: true
+  
+  # Fail entire run if validation fails
+  strict_mode: false
+  
+  # Required fields for each entity type
+  required_fields:
+    issue:
+      - id
+      - number
+      - title
+      - state
+      - created_at
+    repository:
+      - id
+      - name
+      - full_name
+      - created_at
+    comment:
+      - id
+      - issue_url
+      - created_at
+      - body
+  
+  # Data quality thresholds
+  quality_thresholds:
+    min_issues_per_month: 1  # Warn if < 1 issue/month
+    max_null_percentage: 5   # Fail if > 5% null critical fields
+    
+# Error Handling
+error_handling:
+  # Maximum consecutive failures before giving up
+  max_consecutive_failures: 10
+  
+  # Retry failed chunks
+  retry_failed_chunks: true
+  
+  # Maximum retries per chunk
+  max_chunk_retries: 3
+  
+  # Continue processing other repos if one fails
+  continue_on_repo_failure: true
+  
+# Monitoring & Logging
+monitoring:
+  log_level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  log_file: "./logs/backfill_{timestamp}.log"
+  
+  # Progress reporting interval
+  progress_interval: 100  # Log progress every N records
+  
+  # Send metrics to Cloud Monitoring
+  cloud_monitoring_enabled: false
+  
+  # Slack/email notifications (optional)
+  notifications:
+    enabled: false
+    slack_webhook_url: null
+    email_recipients: []
+    
+# Performance Tuning
+performance:
+  # Connection pooling
+  connection_pool_size: 10
+  
+  # Timeout settings
+  connect_timeout: 10
+  read_timeout: 30
+  
+  # Memory optimization
+  chunk_processing: true  # Process in chunks vs loading all to memory
+  max_memory_mb: 2048     # Approximate memory limit
+  
+# Cloud Run Deployment (for containerized backfill)
+cloud_run:
+  service_name: "github-backfill-runner"
+  memory: "4Gi"
+  cpu: "2"
+  timeout: "3600s"  # 1 hour max
+  max_instances: 1  # Run one at a time
+  
+# Testing & Dry Run
+testing:
+  dry_run: false  # Set true to test without writing to GCS
+  limit_records: null  # Limit records per repo (null = no limit)
+  test_repositories: []  # If set, only process these repos
