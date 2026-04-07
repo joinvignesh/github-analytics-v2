@@ -1,3 +1,5 @@
+-- metrics of each repository.
+
 {{
     config(
         materialized='table',

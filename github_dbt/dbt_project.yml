@@ -54,6 +54,8 @@ models:
         +materialized: incremental
         +unique_key: id
         +on_schema_change: "append_new_columns"
+        view_ISSUE_TIMELINE_GANTT:
+          +materialized: view
 
 # Seeds configuration
 seeds:

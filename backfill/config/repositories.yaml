@@ -9,6 +9,7 @@ repositories:
     
     # Optional: Override global settings for this repo
     config_overrides:
+      chunk_size: "weekly"  # ← Large repo: use weekly chunks
       # If repo is very large, use custom settings
       per_page: 100
       batch_size: 1
@@ -29,6 +30,9 @@ repositories:
   - owner: "dbt-labs"
     name: "dbt-core"
     full_name: "dbt-labs/dbt-core"
+
+    config_overrides:
+      chunk_size: "monthly"  # ← Default: monthly chunks
     
     metadata:
       description: "dbt (data build tool) - data transformation workflow"

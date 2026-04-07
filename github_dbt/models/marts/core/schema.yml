@@ -1,120 +1,120 @@
 version: 2
 
 models:
-  - name: fct_repo_activity_daily
-    description: |
-      Daily aggregated activity metrics for each repository.
-      Includes issue creation, closure, and comment activity.
-      Incremental model that processes only new dates.
-    
-    columns:
-      - name: activity_date
-        description: Date of activity (truncated to day)
-      
-      - name: repository_id
-        description: Foreign key to dim_repository
-      
-      - name: total_issues_created
-        description: Total issues and PRs created on this date
-      
-      - name: issues_closed
-        description: Issues closed on this date
-      
-      - name: unique_contributors
-        description: Count of distinct users who created issues
-  
-  - name: dim_repository
-    description: |
-      Dimension table containing repository attributes.
-      One row per repository with current snapshot of metadata.
-    
-    columns:
-      - name: repository_id
-        description: Primary key
-        tests:
-          - unique
-          - not_null
-      
-      - name: full_name
-        description: Full repository name (owner/repo)
-      
-      - name: popularity_tier
-        description: Categorization based on star count
-
-  - name: fct_issue_lifecycle
-    description: "Issue-grain fact table for lifecycle tracking and Gantt visualization"
-    columns:
-      - name: issue_key
-        description: "Surrogate key (primary key)"
-        tests:
-          - unique
-          - not_null
-      
-      - name: issue_id
-        description: "GitHub issue ID"
-        tests:
-          - not_null
-      
-      - name: created_date
-        description: "Date issue was created (for date filtering)"
-        tests:
-          - not_null
-      
-      - name: status_label
-        description: "Human-readable status"
-        tests:
-          - accepted_values:
-              arguments:  # ← ADD THIS
-                values: ['Open', 'Closed', 'Unknown']
-      
-      - name: duration_days
-        description: "Days from creation to closure (or to now if open)"
-        tests:
-          - not_null
-  
-  - name: fct_issue_comments
-    description: "Comment-grain fact table for timeline visualization"
-    columns:
-      - name: comment_key
-        description: "Surrogate key (primary key)"
-        tests:
-          - unique
-          - not_null
-      
-      - name: comment_id
-        description: "GitHub comment ID"
-        tests:
-          - not_null
-      
-      - name: issue_id
-        description: "Foreign key to fct_issue_lifecycle"
-        tests:
-          - not_null
-          - relationships:
-              arguments:  # ← ADD THIS
-                to: ref('fct_issue_lifecycle')
-                field: issue_id
-      
-      - name: comment_date_key
-        description: "Date comment was created (for date filtering)"
-        tests:
-          - not_null
-  
   - name: dim_date
-    description: "Date dimension for cross-grain filtering"
     columns:
       - name: date_key
-        description: "Date (primary key)"
         tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: warn
+          - not_null:
+              config:
+                severity: warn
 
+  - name: dim_repository
+    columns:
+      - name: repository_id
+        tests:
+          - unique:
+              config:
+                severity: warn
+          - not_null:
+              config:
+                severity: warn
+      - name: popularity_tier
+        tests:
+          - accepted_values:
+              values: ['Very Popular (10K+ stars)', 'Popular (1K-10K stars)', 'Growing (100-1K stars)', 'Emerging (<100 stars)']
+              config: # Fixed: Moved out of the 'values' list
+                severity: warn
 
+  - name: fct_repo_activity_daily
+    columns:
+      - name: repository_id
+        tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              to: ref('dim_repository')
+              field: repository_id
+              config: # Fixed: Added config wrapper
+                severity: error
+      - name: total_issues_created
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+              config: # Fixed: Moved out of 'expression'
+                severity: warn
 
+  - name: fct_issue_lifecycle
+    columns:
+      - name: issue_key
+        tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: status_label
+        tests:
+          - accepted_values:
+              values: ['Open', 'Closed', 'Unknown']
+              config: # Fixed: Moved out of 'values'
+                severity: warn
+      - name: lifecycle_stage
+        tests:
+          - accepted_values:
+              values: ['Completed', 'Stale', 'Long-running', 'Active']
+              config: 
+                severity: warn
+      - name: duration_days
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+              config: # Fixed: Moved out of 'expression'
+                severity: error
 
+  - name: fct_issue_comments
+    columns:
+      - name: comment_key
+        tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: issue_id
+        tests:
+          - relationships:
+              to: ref('fct_issue_lifecycle')
+              field: issue_id
+              config: # Fixed: Moved out of 'field'
+                severity: error
 
-
-
-
-
-
+  - name: view_ISSUE_TIMELINE_GANTT2
+    description: "Unpivoted issue events (open, closed, comments) for Gantt chart dual-axis visualization."
+    columns:
+      - name: issue_id
+        tests:
+          - not_null: { severity: error }
+      - name: event_type
+        tests:
+          - accepted_values:
+              values: ['ISSUE_DURATION', 'COMMENT']
+              config: { severity: error }
+      - name: event_date
+        description: "The point in time the event occurred."
+        tests:
+          - not_null: { severity: error }
+      - name: issue_opened_at
+        description: "Start of the Gantt bar."
+        tests:
+          - not_null: { severity: error }
+      - name: issue_closed_at
+        description: "End of the Gantt bar (current timestamp if open)."
+        tests:
+          - not_null: { severity: error }

@@ -1,3 +1,5 @@
+-- determine the metrics of each issue - age, is pull-request, close duration
+
 {{
     config(
         materialized='table',

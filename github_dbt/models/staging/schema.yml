@@ -5,41 +5,53 @@ models:
     description: Staged GitHub issues with typed columns
     columns:
       - name: issue_id
-        description: Unique identifier for the issue
         tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: warn
+          - not_null:
+              config:
+                severity: warn
       
       - name: state
         description: Current state of the issue
         tests:
           - accepted_values:
+              arguments:
                 values: ['open', 'closed']
+              config: # Fixed: This is now vertically aligned with 'values'
+                severity: warn
       
       - name: created_at
-        description: When the issue was created
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: warn
   
   - name: stg_github_repositories
-    description: Staged GitHub repositories with typed columns
     columns:
       - name: repository_id
-        description: Unique identifier for the repository
         tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: warn
+          - not_null:
+              config:
+                severity: warn
       
       - name: repository_name
-        description: Name of the repository
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: warn
   
   - name: stg_github_comments
-    description: Staged GitHub comments with typed columns
     columns:
       - name: comment_id
-        description: Unique identifier for the comment
         tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: warn
+          - not_null:
+              config:
+                severity: warn

@@ -1,0 +1,9 @@
+{
+  "account": "FSMCQTJ-TN29225",
+  "user": "github_pipeline_user",
+  "password": "vigPipe@123!",
+  "warehouse": "github_transform_wh",
+  "database": "github_analytics",
+  "schema": "raw",
+  "role": "github_analytics_role"
+}

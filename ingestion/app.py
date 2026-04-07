@@ -16,7 +16,7 @@ from flask import Flask, request, jsonify
 from datetime import datetime
 
 # Import our extraction logic
-from github_extractor import main as run_extraction
+from .github_extractor import main as run_extraction
 
 # Configure logging
 logging.basicConfig(

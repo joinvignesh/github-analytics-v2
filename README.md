@@ -40,10 +40,15 @@ venv/scripts/activate
 
 # snowflakes-credentials
 
--- eeshaniwasa
--- Eeshwara@12345
--- VKYVOUN-JU13655.snowflakecomputing.com
--- https://app.snowflake.com/me-central2.gcp/dj61470/#/homepage
+SNOWFLAKE_ACCOUNT=FSMCQTJ-TN29225
+SNOWFLAKE_REGION=me-central2
+SNOWFLAKE_CLOUD=gcp
+SNOWFLAKE_USER=vignesh2828
+SNOWFLAKE_PASSWORD=culturalActivity@28
+snowflakes user created to use the snowflakes bucket:
+	github_pipeline_user
+	vigPipe@123!
+snowflakes service account: k0s630000@gcpmecentral2-1-6ca6.iam.gserviceaccount.com
 
 
 

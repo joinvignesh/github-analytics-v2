@@ -58,13 +58,15 @@ def get_github_token(config: dict) -> str:
 
 def load_config(config_path: str) -> dict:
     """Load configuration from YAML"""
-    with open(config_path, "r") as f:
+    # Added encoding="utf-8"
+    with open(config_path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
 def load_repositories(repos_path: str) -> list:
     """Load repository list from YAML"""
-    with open(repos_path, "r") as f:
+    # Added encoding="utf-8"
+    with open(repos_path, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
         return data.get("repositories", [])
 

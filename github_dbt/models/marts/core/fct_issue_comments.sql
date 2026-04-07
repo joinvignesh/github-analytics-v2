@@ -1,3 +1,5 @@
+-- Only has the latest comment for each issue
+
 {{
     config(
         materialized='incremental',
@@ -6,7 +8,14 @@
     )
 }}
 
-WITH comments AS (
+WITH 
+{% if is_incremental() %}
+latest_time AS (
+    SELECT MAX(comment_date) as max_date FROM {{ this }}
+),
+{% endif %}
+
+comments AS (
     SELECT
         comment_id,
         issue_number,
@@ -20,7 +29,8 @@ WITH comments AS (
     FROM {{ ref('stg_github_comments') }}
     
     {% if is_incremental() %}
-    WHERE created_at > (SELECT MAX(created_at) FROM {{ this }})
+    -- Join to the CTE instead of using a subquery in WHERE
+    WHERE created_at > (SELECT max_date FROM latest_time)
     {% endif %}
 ),
 

@@ -57,7 +57,7 @@ class GitHubExtractor:
         self.token = token
         self.base_url = "https://api.github.com"
         self.headers = {
-            "Authorization": f"Bearer {token}",
+            "Authorization": f"token {token}",
             "Accept": "application/vnd.github+json",
             "X-GitHub-Api-Version": "2022-11-28",
         }

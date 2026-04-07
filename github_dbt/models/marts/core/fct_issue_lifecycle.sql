@@ -1,3 +1,5 @@
+
+
 {{
     config(
         materialized='table',
@@ -64,14 +66,15 @@ joined AS (
         -- Lifecycle metrics
         CASE 
             WHEN i.closed_at IS NOT NULL 
-            THEN DATEDIFF('day', i.created_at, i.closed_at)
-            ELSE DATEDIFF('day', i.created_at, CURRENT_TIMESTAMP())
+            -- Ensure duration is never negative due to data anomalies
+            THEN GREATEST(0, DATEDIFF('day', i.created_at, i.closed_at))
+            ELSE GREATEST(0, DATEDIFF('day', i.created_at, CURRENT_TIMESTAMP()))
         END AS duration_days,
         
         CASE 
             WHEN i.closed_at IS NOT NULL 
-            THEN DATEDIFF('hour', i.created_at, i.closed_at)
-            ELSE DATEDIFF('hour', i.created_at, CURRENT_TIMESTAMP())
+            THEN GREATEST(0, DATEDIFF('hour', i.created_at, i.closed_at))
+            ELSE GREATEST(0, DATEDIFF('hour', i.created_at, CURRENT_TIMESTAMP()))
         END AS duration_hours,
         
         CASE 

@@ -10,9 +10,9 @@ $SERVICE_NAME = "dbt-runner"
 $IMAGE_NAME = "gcr.io/$PROJECT_ID/dbt-runner"
 
 # Snowflake credentials
-$SNOWFLAKE_ACCOUNT = "VKYVOUN-JU13655"
-$SNOWFLAKE_USER = "eeshaniwasa"
-$SNOWFLAKE_PASSWORD = "Eeshwara@12345"  # REPLACE THIS
+$SNOWFLAKE_ACCOUNT = "FSMCQTJ-TN29225"
+$SNOWFLAKE_USER = "github_pipeline_user"
+$SNOWFLAKE_PASSWORD = "vigPipe@123!"  # REPLACE THIS
 
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host "  dbt Cloud Run Deployment Script" -ForegroundColor Cyan

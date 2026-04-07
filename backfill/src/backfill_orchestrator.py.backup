@@ -1,6 +1,6 @@
 """
-Improved Backfill Orchestrator
-Incorporates best practices from old direct-Snowflake approach
+Main Backfill Orchestrator
+Coordinates the entire historical data extraction process
 """
 
 import logging
@@ -20,10 +20,10 @@ logger = logging.getLogger(__name__)
 class BackfillOrchestrator:
     """
     Orchestrates historical data backfill with:
-    - Hybrid pagination (automatic + date filtering)
+    - Monthly chunking for manageability
     - Parallel repository processing
     - Checkpoint-based resume
-    - Efficient API usage
+    - Comprehensive error handling
     """
 
     def __init__(
@@ -44,7 +44,12 @@ class BackfillOrchestrator:
         self.error_config = config.get("error_handling", {})
 
     def run(self, repositories: List[Dict[str, Any]]) -> None:
-        """Execute backfill for all repositories"""
+        """
+        Execute backfill for all repositories
+
+        Args:
+            repositories: List of repository configurations
+        """
         logger.info(f"Starting backfill for {len(repositories)} repositories")
 
         batch_size = self.backfill_config.get("batch_size", 1)
@@ -96,14 +101,11 @@ class BackfillOrchestrator:
             )
             self.checkpoint.mark_repository_started(full_name)
 
-            # Generate chunks (monthly by default, weekly for large repos)
-            chunk_size = repo_config.get("config_overrides", {}).get(
-                "chunk_size", "monthly"
-            )
-            chunks = self._generate_chunks(start_date, end_date, chunk_size)
+            # Generate monthly chunks
+            chunks = self._generate_monthly_chunks(start_date, end_date)
 
             logger.info(
-                f"{full_name}: Processing {len(chunks)} {chunk_size} chunks "
+                f"{full_name}: Processing {len(chunks)} monthly chunks "
                 f"from {start_date.date()} to {end_date.date()}"
             )
 
@@ -112,7 +114,7 @@ class BackfillOrchestrator:
             max_failures = self.error_config.get("max_consecutive_failures", 10)
 
             for chunk_start, chunk_end in chunks:
-                chunk_id = chunk_start.strftime("%Y-%m-%d")
+                chunk_id = chunk_start.strftime("%Y-%m")
 
                 # Check if chunk already processed
                 if not self.checkpoint.should_process_chunk(full_name, chunk_id):
@@ -164,16 +166,19 @@ class BackfillOrchestrator:
         end_date: datetime,
         chunk_id: str,
     ) -> Tuple[int, int]:
-        """Process a time chunk"""
+        """
+        Process a time chunk (e.g., one month)
+
+        Returns:
+            Tuple of (issues_count, comments_count)
+        """
         logger.info(
             f"{owner}/{repo}: Processing chunk {chunk_id} "
             f"({start_date.date()} to {end_date.date()})"
         )
 
-        # Fetch issues for this time period (IMPROVED METHOD)
-        issues = self._fetch_issues_for_period_improved(
-            owner, repo, start_date, end_date
-        )
+        # Fetch issues for this time period
+        issues = self._fetch_issues_for_period(owner, repo, start_date, end_date)
 
         if not issues:
             logger.info(f"{owner}/{repo}: No issues in chunk {chunk_id}")
@@ -204,79 +209,72 @@ class BackfillOrchestrator:
 
         return len(issues), len(comments)
 
-    def _fetch_issues_for_period_improved(
+    def _fetch_issues_for_period(
         self, owner: str, repo: str, start_date: datetime, end_date: datetime
     ) -> List[Dict[str, Any]]:
-        """
-        IMPROVED: Fetch all issues created in a date range
-        Uses hybrid approach: server-side 'since' + client-side created_at filter
-        """
+        """Fetch all issues created in a date range"""
         all_issues = []
+        page = 1
         per_page = self.backfill_config.get("per_page", 100)
 
-        # Use 'since' for server-side filtering (reduces API calls)
-        # GitHub filters by 'updated_at', but we'll filter by 'created_at' client-side
-        since = start_date.isoformat()
+        # DON'T use 'since' parameter for historical backfill
+        # Filter by created_at after fetching
 
-        url = f"{self.github_client.base_url}/repos/{owner}/{repo}/issues"
-        params = {
-            "state": "all",
-            "since": since,  # ← RESTORED: Server-side filter
-            "per_page": per_page,
-            "sort": "created",
-            "direction": "asc",
-        }
-
-        page_count = 0
-
-        while url:
+        while True:
             try:
-                # Use session directly for access to response.links
-                response = self.github_client.session.get(
-                    url, params=params, timeout=self.github_client.timeout
+                issues = self.github_client.get_issues(
+                    owner=owner,
+                    repo=repo,
+                    state="all",
+                    # since=since,  # ← REMOVE THIS
+                    # until=until,  # ← GitHub API doesn't support 'until'
+                    per_page=per_page,
+                    page=page,
                 )
-                response.raise_for_status()
 
-                issues = response.json()
-                page_count += 1
-
-                # Filter out pull requests
-                issues = [i for i in issues if "pull_request" not in i]
+                self.checkpoint.update_stats(api_calls=1)
 
                 if not issues:
                     break
 
-                # Client-side filter by created_at for accuracy
+                # Filter by created_at in our code
+                filtered = []
                 for issue in issues:
                     created = datetime.fromisoformat(
                         issue["created_at"].replace("Z", "+00:00")
                     )
 
-                    # Only include issues within our target date range
+                    # Keep issues within our time window
                     if start_date <= created <= end_date:
-                        all_issues.append(issue)
+                        filtered.append(issue)
 
-                # Automatic pagination using GitHub's Link header
-                url = response.links.get("next", {}).get("url")
-                params = None  # Don't use params with next URL
+                    # Stop if we've passed the end date
+                    elif created > end_date:
+                        break
 
-                self.checkpoint.update_stats(api_calls=1)
+                all_issues.extend(filtered)
 
-                # Log progress every 10 pages
-                if page_count % 10 == 0:
-                    logger.info(
-                        f"{owner}/{repo}: Fetched {page_count} pages, "
-                        f"{len(all_issues)} issues so far"
-                    )
+                # Stop pagination if:
+                # 1. Less than full page returned (last page)
+                if len(issues) < per_page:
+                    break
+
+                # 2. All issues are beyond our date range
+                last_created = datetime.fromisoformat(
+                    issues[-1]["created_at"].replace("Z", "+00:00")
+                )
+                if last_created > end_date:
+                    break
+
+                page += 1
 
             except Exception as e:
-                logger.error(f"Error fetching issues page {page_count}: {e}")
+                logger.error(f"Error fetching issues page {page}: {e}")
                 raise
 
         logger.info(
-            f"{owner}/{repo}: Fetched {len(all_issues)} issues "
-            f"from {start_date.date()} to {end_date.date()} "
-            f"({page_count} API calls)"
+            f"Fetched {len(all_issues)} issues created between "
+            f"{start_date.date()} and {end_date.date()}"
         )
 
         return all_issues
@@ -295,32 +293,35 @@ class BackfillOrchestrator:
                 continue
 
             try:
-                # Use automatic pagination for comments too
-                url = f"{self.github_client.base_url}/repos/{owner}/{repo}/issues/{issue_number}/comments"
-                params = {"per_page": 100, "sort": "created", "direction": "asc"}
+                page = 1
+                per_page = self.backfill_config.get("per_page", 100)
 
-                while url:
-                    response = self.github_client.session.get(
-                        url, params=params, timeout=self.github_client.timeout
+                while True:
+                    comments = self.github_client.get_issue_comments(
+                        owner=owner,
+                        repo=repo,
+                        issue_number=issue_number,
+                        per_page=per_page,
+                        page=page,
                     )
-                    response.raise_for_status()
 
-                    comments = response.json()
+                    self.checkpoint.update_stats(api_calls=1)
 
                     if not comments:
                         break
 
                     all_comments.extend(comments)
 
-                    url = response.links.get("next", {}).get("url")
-                    params = None
+                    if len(comments) < per_page:
+                        break
 
-                    self.checkpoint.update_stats(api_calls=1)
+                    page += 1
 
             except Exception as e:
                 logger.warning(
                     f"Error fetching comments for issue #{issue_number}: {e}"
                 )
+                # Continue with other issues
                 continue
 
         return all_comments
@@ -340,53 +341,45 @@ class BackfillOrchestrator:
         self, repo_config: Dict[str, Any], repo_created_at: str
     ) -> Tuple[datetime, datetime]:
         """Determine start and end dates for backfill"""
-        custom_range = repo_config.get("custom_date_range") or {}
+        # Check for custom range - ensure it's a dict, not None
+        custom_range = repo_config.get("custom_date_range") or {}  # ← FIX
 
-        if "start_date" in custom_range and custom_range["start_date"]:
+        if "start_date" in custom_range:
             start_date = datetime.fromisoformat(custom_range["start_date"])
         else:
             global_start = self.backfill_config.get("start_date")
             if global_start:
                 start_date = datetime.fromisoformat(global_start)
             else:
+                # Use repository creation date
                 start_date = datetime.fromisoformat(
                     repo_created_at.replace("Z", "+00:00")
                 )
 
-        if "end_date" in custom_range and custom_range["end_date"]:
+        if "end_date" in custom_range:
             end_date = datetime.fromisoformat(custom_range["end_date"])
         else:
             global_end = self.backfill_config.get("end_date")
             if global_end:
                 end_date = datetime.fromisoformat(global_end)
             else:
-                end_date = datetime.now(timezone.utc)
+                end_date = datetime.now(timezone.utc)  # ← Also update this
 
         return start_date, end_date
 
-    def _generate_chunks(
-        self, start_date: datetime, end_date: datetime, chunk_type: str = "monthly"
+    def _generate_monthly_chunks(
+        self, start_date: datetime, end_date: datetime
     ) -> List[Tuple[datetime, datetime]]:
-        """
-        Generate list of date ranges for processing
-
-        chunk_type: 'weekly', 'monthly', 'quarterly'
-        """
+        """Generate list of monthly date ranges"""
         chunks = []
         current = start_date
 
         while current < end_date:
-            if chunk_type == "weekly":
-                next_period = current + timedelta(weeks=1)
-            elif chunk_type == "monthly":
-                next_period = current + relativedelta(months=1)
-            elif chunk_type == "quarterly":
-                next_period = current + relativedelta(months=3)
-            else:
-                next_period = current + relativedelta(months=1)
+            # Calculate end of current month
+            next_month = current + relativedelta(months=1)
+            chunk_end = min(next_month, end_date)
 
-            chunk_end = min(next_period, end_date)
             chunks.append((current, chunk_end))
-            current = next_period
+            current = next_month
 
         return chunks

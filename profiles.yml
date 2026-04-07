@@ -10,7 +10,7 @@ github_dbt:
       account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
       user: "{{ env_var('SNOWFLAKE_USER') }}"
       password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
-      role: ACCOUNTADMIN
+      role: GITHUB_ANALYTICS_ROLE
       database: GITHUB_ANALYTICS
       warehouse: GITHUB_TRANSFORM_WH
       schema: RAW

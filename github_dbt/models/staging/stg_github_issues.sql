@@ -49,6 +49,8 @@ parsed AS (
         source_file,
         loaded_at
     FROM source
+    WHERE raw_data:id IS NOT NULL 
+      AND raw_data:created_at IS NOT NULL
 ),
 
 -- Keep only the most recent snapshot of each issue
