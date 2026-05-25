@@ -44,7 +44,7 @@ SNOWFLAKE_ACCOUNT=FSMCQTJ-TN29225
 SNOWFLAKE_REGION=me-central2
 SNOWFLAKE_CLOUD=gcp
 SNOWFLAKE_USER=vignesh2828
-SNOWFLAKE_PASSWORD=culturalActivity@28
+SNOWFLAKE_PASSWORD=mindActivation@282
 snowflakes user created to use the snowflakes bucket:
 	github_pipeline_user
 	vigPipe@123!
